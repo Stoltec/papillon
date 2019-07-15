@@ -19,8 +19,14 @@ save_sanitize = False, sanitized_name = 'default_sanitized.csv'):
 
     word_freq = {}
     letter_freq = {}
-
+    final_word_freq = {}
+    final_letter_freq = {}
+        
     for e, row in data.iterrows():
+        # attempt to remove non-english characters by encoding to 
+        # ascii back to unicode again and ignoring failures
+        data.iat[e, 0] = remove_nonenglish(data.iat[e, 0])
+
         # remove all punctuation (TODO: decide whether to remove periods)
         # remove all numerals
         data.iat[e, 0] = remove_numbers(data.iat[e, 0])
@@ -37,20 +43,35 @@ save_sanitize = False, sanitized_name = 'default_sanitized.csv'):
         # remove all stopwords if the flag is set
         if (not remove_stopwords):
             data.iat[e, 0] = remove_stopwords(data.iat[e, 0])
-    
-        word_freq, letter_freq = frequency_analysis(data.iat[e, 0], word_freq, letter_freq, min_frequency)
+
+        # remove single character words (also non-english?)
+        data.iat[e, 0] = remove_single(data.iat[e, 0])
+        
+        # get the frequencies of each letter and word
+        word_freq, letter_freq = find_frequency(data.iat[e, 0], 
+                word_freq, letter_freq)
+
+        data.iat[e, 0] = remove_frequency(data.iat[e, 0], 
+                word_freq, min_frequency)
+
+        # get the frequencies of each letter and word
+        final_word_freq, final_letter_freq = find_frequency(data.iat[e, 0], 
+                final_word_freq, final_letter_freq)
 
     with open('word.csv', 'w') as csv_file:
         writer = csv.writer(csv_file)
-        for key, value in word_freq.items():
+        for key, value in final_word_freq.items():
             writer.writerow([key, value])
 
     with open('letter.csv', 'w') as csv_file:
         writer = csv.writer(csv_file)
-        for key, value in letter_freq.items():
+        for key, value in final_letter_freq.items():
             writer.writerow([key, value])
 
     return data
+
+def remove_nonenglish(entry):
+    return entry.encode('ascii', 'ignore').decode('utf-8', 'ignore')
 
 # TODO: Implement
 def remove_stopwords(entry):
@@ -68,9 +89,13 @@ def remove_numbers(entry):
     return re.sub(r'\d+', '', entry)
 
 def reduce_whitespace(entry):
-    return re.sub(" +", " ", entry)
+    entry = re.sub('\s+', ' ', entry)
+    return re.sub(' +', ' ', entry)
 
-def frequency_analysis(entry, word_freq, letter_freq, min_freq):
+def remove_single(entry):
+    return re.sub('(\\b[A-Za-z] \\b|\\b [A-Za-z]\\b)', '', entry)
+
+def find_frequency(entry, word_freq, letter_freq):
     words = entry.split(' ')
 
     for word in words:
@@ -86,3 +111,16 @@ def frequency_analysis(entry, word_freq, letter_freq, min_freq):
                 letter_freq[letter] = 1
 
     return word_freq, letter_freq
+
+def remove_frequency(entry, word_freq, min_freq):
+    words = entry.split(' ')
+
+    clean_entry = ''
+
+    for i, word in enumerate(words):
+        if (word_freq[word] >= min_freq):
+            clean_entry += word
+            if (not i == len(words) - 1):
+                clean_entry += ' '
+        
+    return clean_entry

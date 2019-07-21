@@ -103,5 +103,9 @@ venv.bak/
 # mypy
 .mypy_cache/
 
-data/*.csv
-data/*.zip
+# ignore the data directory
+data/*
+#data/*.csv
+#data/*.zip
+#data/*.txt
+

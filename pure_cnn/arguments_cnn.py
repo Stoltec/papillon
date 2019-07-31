@@ -1,6 +1,6 @@
 import torch.nn as nn
 
-class ActionCNN(nn.Module):
+class ArgumentsCNN(nn.Module):
     def __init__(self, word_dim, out_classes):
         super(ConvNet, self).__init__()
         self.first = nn.Sequential(

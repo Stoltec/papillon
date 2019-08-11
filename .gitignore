@@ -108,4 +108,4 @@ data/*
 #data/*.csv
 #data/*.zip
 #data/*.txt
-
+!data/stopwords.txt

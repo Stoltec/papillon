@@ -1,4 +1,4 @@
-import csv, os
+import csv, os, random
 import numpy as np
 
 DATA_DIR = 'data/food/recipes'
@@ -16,8 +16,6 @@ def load_and_split(random_pad = True, find_sentence_length = True,
     # hard-set the maximum sentence length
     if (not find_sentence_length):
         sentence_length = max_sentence_length
-
-    print('size_data:', sentence_length, vector_size, num_datapoints)
 
     # read in the data from files
     data, labels = read_then_pad(random_pad, num_datapoints,
@@ -63,10 +61,10 @@ def get_dataset_info():
     return max_length, vector_size, num_datapoints
 
 # TODO: add in the random padding
-def read_then_pad(random_pad, num_datapoints, sentence_length, vector_size):
-    data = np.zeros((num_datapoints, sentence_length * vector_size),
+def read_then_pad(random_pad, num_datapoints, sentence_len, vector_size):
+    data = np.zeros((num_datapoints, sentence_len * vector_size),
             dtype = np.float)
-    labels = np.zeros((num_datapoints, sentence_length), dtype = np.float)
+    labels = np.zeros((num_datapoints, sentence_len), dtype = np.float)
 
     point_index = 0
 
@@ -74,11 +72,20 @@ def read_then_pad(random_pad, num_datapoints, sentence_length, vector_size):
         # if it is a directory
         if (os.path.isdir(os.path.join(DATA_DIR + '/' + d))):
             for f in os.listdir(DATA_DIR + '/' + d):
-                print(f)
                 # if it is a file is a .csv (ignores the .txt of the sentence)
                 if (os.path.isfile(os.path.join(DATA_DIR + '/' + d + '/' + f))
                         and f.endswith('_embedded.csv')):
                     # read the whole .csv
+                    with open(DATA_DIR + '/' + d + '/' + f, 'r') as csv_file:
+                        # offset for random pad
+                        off = 0
+                        # if random pad is enabled
+                        if (random_pad):
+                            # find the current sentence length
+                            curr_len = sum(1 for line in csv_file)
+                            # random offset ensuring that the sentence sill fits
+                            off = random.randint(0, sentence_len - curr_len)
+
                     with open(DATA_DIR + '/' + d + '/' + f, 'r') as csv_file:
                         reader = csv.reader(csv_file)
                         # iterate over the rows
@@ -86,10 +93,10 @@ def read_then_pad(random_pad, num_datapoints, sentence_length, vector_size):
                             for e, element in enumerate(row):
                                 # if it is data
                                 if (e < (len(row) - 1)):
-                                    data[point_index][(r * vector_size) + e] = element
+                                    data[point_index][((r + off) * vector_size) + e] = element
                                 # if it is a label
                                 else:
-                                    labels[point_index][r] = element
+                                    labels[point_index][r + off] = element
                     # increment the index for a datapoint
                     point_index += 1
 

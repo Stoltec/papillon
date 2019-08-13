@@ -22,5 +22,3 @@ def read_file(input_file):
                 continue
             # remove all accents and words of less than three letters
             yield simple_preprocess(line, deacc = True)
-
-
